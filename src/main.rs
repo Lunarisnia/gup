@@ -1,5 +1,5 @@
-use std::env::current_dir;
-use std::fs;
+mod gup_init;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -9,20 +9,27 @@ struct CLI {
 }
 
 #[derive(Subcommand)]
+#[allow(non_camel_case_types)]
 enum Commands {
     // Init the folder as a gup repository
-    init {}
+    init {},
+
+    add {
+        path: String,
+    },
 }
 
 fn main() {
     let cli = CLI::parse();
 
     match &cli.command {
-        Some(Commands::init {}) => {
-            match fs::create_dir("./.gup") {
-                Ok(()) => (),
-                Err(e) => println!("{e}")
-            };
+        Some(Commands::init {}) => gup_init::init_repository(),
+        Some(Commands::add { path }) => {
+            if path == "." {
+                println!("Adding the entire thing");
+            } else {
+                println!("Adding Individual files not working yet");
+            }
         }
         None => (),
     }
