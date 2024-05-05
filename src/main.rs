@@ -23,7 +23,7 @@ fn main() {
     let cli = CLI::parse();
 
     match &cli.command {
-        Some(Commands::init {}) => gup_init::init_repository(),
+        Some(Commands::init {}) => gup_init::init_repository("main".to_string()),
         Some(Commands::add { path }) => {
             if path == "." {
                 println!("Adding the entire thing");
