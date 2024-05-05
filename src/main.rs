@@ -1,4 +1,5 @@
 mod gup_init;
+mod gup_add;
 
 use clap::{Parser, Subcommand};
 
@@ -15,7 +16,7 @@ enum Commands {
     init {},
 
     add {
-        path: String,
+        path: std::path::PathBuf,
     },
 }
 
@@ -24,13 +25,7 @@ fn main() {
 
     match &cli.command {
         Some(Commands::init {}) => gup_init::init_repository("main".to_string()),
-        Some(Commands::add { path }) => {
-            if path == "." {
-                println!("Adding the entire thing");
-            } else {
-                println!("Adding Individual files not working yet");
-            }
-        }
+        Some(Commands::add { path }) => gup_add::add(path),
         None => (),
     }
 }
