@@ -15,8 +15,10 @@ pub fn add(path_buf: &PathBuf) {
         match fs::read_dir(".") {
             Ok(readDir) => {
                 for dir in readDir {
-                    if !dir.unwrap().path().as_path() == Path::new("./.gup") {
-                        // TODO: Ignore list here
+                    // TODO: Add Ignore list support here
+                    let current_path = dir.unwrap().path().as_path();
+                    if current_path == Path::new("./.gup") {
+                        println!("NOT GUP: {:?}", current_path.unwrap())
                     }
                     // println!("X: {:?}", dir.unwrap().path());
                 }
