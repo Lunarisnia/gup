@@ -1,26 +1,27 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-
 pub fn add(path_buf: &PathBuf) {
-    let ignore_list : Vec<Path> = Vec::new();
     if !Path::new("./.gup").exists() {
         return println!("This is not a gup repository");
     }
     if path_buf.as_path() == Path::new(".") {
-        // Read all files and implement the drawn logic
-        // 1. validate if the current folder is a gup repo
-        // 2. Read all files/folder except .gup
-        // 3. Read filter out all path that match the .gupignore
+        let gup_ignore = fs::read_to_string("./.gupignore").unwrap_or_else(|_| "".to_string());
+        let mut ignore_list : Vec<&Path> = Vec::new();
+        ignore_list.push(Path::new("./.gup"));
+        for entry in gup_ignore.split("\n").collect::<Vec<_>>() {
+            ignore_list.push(Path::new(entry));
+        }
+
         match fs::read_dir(".") {
             Ok(readDir) => {
                 for dir in readDir {
-                    // TODO: Add Ignore list support here
-                    let current_path = dir.unwrap().path().as_path();
-                    if current_path == Path::new("./.gup") {
-                        println!("NOT GUP: {:?}", current_path.unwrap())
+                    let dir_entry = dir.unwrap().path();
+                    let current_path = dir_entry.as_path();
+                    if !ignore_list.contains(&current_path) {
+                        // TODO: Staging files logic 1 here
+                        println!("NOT GUP: {:?}", current_path)
                     }
-                    // println!("X: {:?}", dir.unwrap().path());
                 }
             }
             Err(e) => println!("{}", e)
