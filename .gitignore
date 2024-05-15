@@ -1,5 +1,7 @@
 /target
 .idea/
 .gup/
-*.txt
-*.go
+a.go
+b.go
+file_a
+file_b
