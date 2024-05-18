@@ -1,11 +1,15 @@
 use std::fs::{File, metadata};
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader};
 
 use clap::{Error, Parser, Subcommand};
+use crate::branch_manager::BranchManager;
+
 use crate::gup_add::FileStager;
 
 mod gup_init;
 mod gup_add;
+mod maze_solver;
+mod branch_manager;
 
 #[derive(Parser)]
 struct CLI {
@@ -31,13 +35,14 @@ enum Commands {
 
 fn main() {
     let cli = CLI::parse();
-    let file_stager = FileStager{
-
-    };
+    let branch_manager = BranchManager::new();
 
     match &cli.command {
-        Some(Commands::init {}) => gup_init::init_repository("main".to_string()),
-        Some(Commands::add { path }) => file_stager.stage(path).unwrap(),
+        Some(Commands::init {}) => branch_manager.init_repository("main".to_string()),
+        Some(Commands::add { path }) => {
+            let mut file_stager = FileStager::new(branch_manager);
+            file_stager.stage(path).unwrap()
+        },
         Some(Commands::compare { file_a, file_b }) => compare_files(file_a, file_b).unwrap(),
         None => (),
     }
@@ -68,7 +73,7 @@ fn compare_files(file_a: &std::path::PathBuf, file_b: &std::path::PathBuf) -> Re
             let y_buffer = y_reader.fill_buf()?;
 
             if x_buffer != y_buffer {
-               break;
+                break;
             }
 
             (x_buffer.len(), y_buffer.len())
