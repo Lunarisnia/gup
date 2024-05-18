@@ -18,10 +18,12 @@ impl BranchManager {
         };
         if Path::new("./.gup").exists() {
             branch_manager.fetch_branch_list();
+            branch_manager.fetch_active_branch()
         }
 
         branch_manager
     }
+
 
     fn fetch_branch_list(&mut self) {
         let read_dir = fs::read_dir("./.gup/checkout").unwrap();
@@ -34,7 +36,7 @@ impl BranchManager {
         }
     }
 
-    pub fn checkout(&self, branch: &String) -> PathBuf {
+    pub fn checkout(&self, branch: &String) {
         let read_dir = fs::read_dir("./.gup/checkout").unwrap();
         for entry in read_dir {
            let dir_entry =  entry.unwrap();
@@ -42,10 +44,18 @@ impl BranchManager {
             let split_text = &dir_path.to_str().unwrap().split("/").collect::<Vec<_>>();
 
             if split_text[split_text.len() - 1] == branch {
-                return dir_path;
+                fs::write("./.gup/active_branch.txt", split_text[split_text.len() - 1]).unwrap();
             }
         }
-        return PathBuf::new();
+    }
+
+    pub fn fetch_head(&self) -> PathBuf {
+        let read_dir = fs::read_dir(format!("./.gup/checkout/{}", self.active_branch)).unwrap();
+        for entry in read_dir {
+            let dir_entry = entry.unwrap();
+            return dir_entry.path();
+        }
+        PathBuf::new()
     }
 
     pub fn init_repository(&self, starting_branch: String) {
@@ -86,5 +96,10 @@ impl BranchManager {
         }
         let mut active_branch = File::create("./.gup/active_branch.txt").unwrap();
         write!(active_branch, "{}", branch_name).unwrap();
+    }
+
+    fn fetch_active_branch(&mut self) {
+        let active_branch = fs::read_to_string("./.gup/active_branch.txt").unwrap();
+        self.active_branch = active_branch;
     }
 }

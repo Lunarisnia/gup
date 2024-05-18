@@ -2,8 +2,8 @@ use std::fs::{File, metadata};
 use std::io::{BufRead, BufReader};
 
 use clap::{Error, Parser, Subcommand};
-use crate::branch_manager::BranchManager;
 
+use crate::branch_manager::BranchManager;
 use crate::gup_add::FileStager;
 
 mod gup_init;
@@ -27,6 +27,10 @@ enum Commands {
         path: std::path::PathBuf,
     },
 
+    checkout {
+        branch: String,
+    },
+
     compare {
         file_a: std::path::PathBuf,
         file_b: std::path::PathBuf,
@@ -42,7 +46,8 @@ fn main() {
         Some(Commands::add { path }) => {
             let mut file_stager = FileStager::new(branch_manager);
             file_stager.stage(path).unwrap()
-        },
+        }
+        Some(Commands::checkout { branch }) => branch_manager.checkout(branch),
         Some(Commands::compare { file_a, file_b }) => compare_files(file_a, file_b).unwrap(),
         None => (),
     }

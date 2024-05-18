@@ -75,9 +75,9 @@ impl StageListManager {
     }
 
     pub fn push(&mut self, file: &Path) -> io::Result<()> {
+        // TODO: Maybe do this from BranchManager
         // TODO: Check if exist on head
         // TODO: Check if already exist on stage_list
-        // TODO: Maybe do this from BranchManager
         let mut stage_list = &self.stage_list;
         let path_bytes = file.to_str().unwrap();
         let timestamp_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
