@@ -9,7 +9,6 @@ pub struct BranchManager {
     branch_list: Vec<String>,
 }
 
-// I think I need to store the active branch on disk
 impl BranchManager {
     pub fn new() -> BranchManager {
         let mut branch_manager = BranchManager {
