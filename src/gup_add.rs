@@ -1,6 +1,6 @@
 use std::{fs, io};
 use std::fs::{File, metadata, OpenOptions};
-use std::io::{BufRead, Read, read_to_string, Write};
+use std::io::{BufRead, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -83,6 +83,7 @@ impl StageListManager {
             stage_list_raw: OpenOptions::new()
                 .append(true)
                 .write(true)
+                .read(true)
                 .create(true)
                 .open("./.gup/stage_list.txt").unwrap(),
         };
@@ -95,26 +96,38 @@ impl StageListManager {
     }
 
     fn update_stage_list(&mut self) {
-        for line in read_to_string(&self.stage_list_raw).unwrap().lines() {
-            let split_line = line.split("-|-").collect::<Vec<_>>();
-            self.stage_list.push(
-                StageList {
-                    file_path: split_line[0].to_string(),
-                    status: split_line[1].to_string(),
-                    timestamp: u64::from(split_line[2]),
-                }
-            );
+        let mut content = String::new();
+        self.stage_list_raw.read_to_string(&mut content).unwrap();
+        for line in content.split("\n").collect::<Vec<_>>() {
+            if line != "" {
+                let split_line = line.split("-|-").collect::<Vec<_>>();
+                self.stage_list.push(
+                    StageList {
+                        file_path: split_line[0].to_string(),
+                        status: split_line[1].to_string(),
+                        timestamp: split_line[2].parse::<u64>().unwrap(),
+                    }
+                );
+            }
         }
     }
 
     pub fn push(&mut self, branch_manager: &BranchManager, file: &Path) -> io::Result<()> {
         // TODO: Maybe do this from BranchManager
         // TODO: Check if exist on head
+
         // TODO: Check if already exist on stage_list
-        let mut stage_list = &self.stage_list_raw;
+        for stage_list in &self.stage_list {
+            if stage_list.file_path == file.to_str().unwrap() {
+                // if exist of stage_list check if time is older, if older check if file is different if it is mark as updated, if not ignore
+                println!("It worked");
+            }
+        }
+
+        let mut stage_list_raw = &self.stage_list_raw;
         let path_bytes = file.to_str().unwrap();
         let timestamp_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-        writeln!(stage_list, "{path_bytes}-|-{}-|-{}", "CREATED", timestamp_epoch.as_secs()).unwrap();
+        writeln!(stage_list_raw, "{path_bytes}-|-{}-|-{}\n", "CREATED", timestamp_epoch.as_secs()).unwrap();
 
         self.update_stage_list();
         Ok(())
