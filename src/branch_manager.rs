@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 
 // This will keep track of what branch currently active, all branches list, active head
 pub struct BranchManager {
-    active_branch: String,
-    branch_list: Vec<String>,
+    pub active_branch: String,
+    pub branch_list: Vec<String>,
 }
 
 impl BranchManager {
