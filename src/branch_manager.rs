@@ -38,7 +38,7 @@ impl BranchManager {
     pub fn checkout(&self, branch: &String) {
         let read_dir = fs::read_dir("./.gup/checkout").unwrap();
         for entry in read_dir {
-           let dir_entry =  entry.unwrap();
+            let dir_entry = entry.unwrap();
             let dir_path = dir_entry.path();
             let split_text = &dir_path.to_str().unwrap().split("/").collect::<Vec<_>>();
 

@@ -1,11 +1,14 @@
+use std::collections::VecDeque;
 use std::fs::{File, metadata, OpenOptions};
 use std::io;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+
 use clap::Error;
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct StageList {
     file_path: String,
     status: String,
@@ -14,13 +17,13 @@ pub struct StageList {
 
 pub struct StageListManager {
     stage_list_raw: File,
-    stage_list: Vec<StageList>,
+    stage_list: VecDeque<StageList>,
 }
 
 impl StageListManager {
     pub fn new() -> StageListManager {
         let mut stage_list_manager = StageListManager {
-            stage_list: Vec::new(),
+            stage_list: VecDeque::new(),
             stage_list_raw: OpenOptions::new()
                 .append(true)
                 .write(true)
@@ -35,12 +38,13 @@ impl StageListManager {
     }
 
     fn update_stage_list(&mut self) {
+        self.stage_list = VecDeque::new();
         let mut content = String::new();
         self.stage_list_raw.read_to_string(&mut content).unwrap();
         for line in content.split("\n").collect::<Vec<_>>() {
             if line != "" {
                 let split_line = line.split("-|-").collect::<Vec<_>>();
-                self.stage_list.push(
+                self.stage_list.push_back(
                     StageList {
                         file_path: split_line[0].to_string(),
                         status: split_line[1].to_string(),
@@ -89,9 +93,21 @@ impl StageListManager {
     }
 
     #[allow(dead_code)]
-    pub fn consume() {
+    pub fn consume(&mut self) {
         // TODO: Lets work on this
         // TODO: Should dequeue the stage_list and add them to commit/branch/v(X)
+        match self.stage_list.pop_front() {
+            None => {
+                println!("Queue is empty");
+                return
+            }
+            Some(staged) => {
+                println!("{:?}", staged);
+                // All of this will be copied to the same commit folder function
+                // TODO: Copy file, make sure it can create if the destination don't exist
+                // if it can't manually create one then copy the content there
+            }
+        }
     }
 
     pub fn compare_files(&self, file_a: &PathBuf, file_b: &PathBuf) -> Result<bool, Error> {
