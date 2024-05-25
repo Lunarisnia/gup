@@ -1,7 +1,6 @@
-use std::fs::{File, metadata};
-use std::io::{BufRead, BufReader};
+// use std::io::{BufRead};
 
-use clap::{Error, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 use crate::branch_manager::BranchManager;
 use crate::gup_add::FileStager;
@@ -10,6 +9,7 @@ mod gup_init;
 mod gup_add;
 mod maze_solver;
 mod branch_manager;
+mod stage_list_manager;
 
 #[derive(Parser)]
 struct CLI {

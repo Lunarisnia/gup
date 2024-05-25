@@ -48,6 +48,7 @@ impl BranchManager {
         }
     }
 
+    #[allow(dead_code)]
     pub fn fetch_head(&self) -> PathBuf {
         let read_dir = fs::read_dir(format!("./.gup/checkout/{}", self.active_branch)).unwrap();
         for entry in read_dir {
