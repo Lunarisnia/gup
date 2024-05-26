@@ -1,11 +1,14 @@
+use std::{fs, io};
 use std::collections::VecDeque;
-use std::fs::{File, metadata, OpenOptions};
-use std::io;
+use std::ffi::{OsStr, OsString};
+use std::fs::{DirEntry, File, metadata, OpenOptions, ReadDir};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use clap::Error;
+
+use crate::branch_manager::BranchManager;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -18,10 +21,11 @@ pub struct StageList {
 pub struct StageListManager {
     stage_list_raw: File,
     stage_list: VecDeque<StageList>,
+    branch_manager: BranchManager,
 }
 
 impl StageListManager {
-    pub fn new() -> StageListManager {
+    pub fn new(branch_manager: BranchManager) -> StageListManager {
         let mut stage_list_manager = StageListManager {
             stage_list: VecDeque::new(),
             stage_list_raw: OpenOptions::new()
@@ -30,6 +34,7 @@ impl StageListManager {
                 .read(true)
                 .create(true)
                 .open("./.gup/stage_list.txt").unwrap(),
+            branch_manager,
         };
 
         stage_list_manager.update_stage_list();
@@ -99,14 +104,44 @@ impl StageListManager {
         match self.stage_list.pop_front() {
             None => {
                 println!("Queue is empty");
-                return
+                return;
             }
             Some(staged) => {
-                println!("{:?}", staged);
                 // All of this will be copied to the same commit folder function
+                // It will error if the directory doesn't exist, file does not matter
+                // Create Commit dir and copy file into it
                 // TODO: Copy file, make sure it can create if the destination don't exist
-                // if it can't manually create one then copy the content there
+                let dirs: ReadDir = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap();
+                let mut version_stack: u64 = 0;
+                for _ in dirs {
+                    version_stack += 1;
+                }
+
+                if version_stack > 0 {
+                    println!("VSTACK: {:?}", version_stack);
+                    println!("latestINDEX: {version_stack}");
+                    self.create_commit_dir(version_stack);
+
+                    println!("YOOOO: {:?}", staged);
+                    let target =
+                        format!("./.gup/commit/{}/v{}/{}",
+                                self.branch_manager.active_branch,
+                                version_stack,
+                                staged.file_path.trim_start_matches("./"));
+                    println!("TARGET: {target}");
+
+                } else {
+                    // Means there is no commit yet
+                    self.create_commit_dir(0);
+                }
             }
+        }
+    }
+
+    fn create_commit_dir(&self, index: u64) {
+        match fs::create_dir(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, index)) {
+            Ok(()) => (),
+            Err(e) => return println!("failed to create commit dir: {}", e)
         }
     }
 

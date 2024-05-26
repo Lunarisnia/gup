@@ -1,9 +1,10 @@
 use std::fs;
-use std::fs::File;
+use std::fs::{DirEntry, File, ReadDir};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 // This will keep track of what branch currently active, all branches list, active head
+#[derive(Clone)]
 pub struct BranchManager {
     pub active_branch: String,
     pub branch_list: Vec<String>,
@@ -25,11 +26,11 @@ impl BranchManager {
 
 
     fn fetch_branch_list(&mut self) {
-        let read_dir = fs::read_dir("./.gup/checkout").unwrap();
+        let read_dir: ReadDir= fs::read_dir("./.gup/checkout").unwrap();
         for entry in read_dir {
-            let dir_entry = entry.unwrap();
-            let dir_path = dir_entry.path();
-            let split_text = dir_path.to_str().unwrap().split("/").collect::<Vec<_>>();
+            let dir_entry: DirEntry = entry.unwrap();
+            let dir_path: PathBuf = dir_entry.path();
+            let split_text: Vec<&str> = dir_path.to_str().unwrap().split("/").collect::<Vec<_>>();
 
             self.branch_list.push(format!("{}", split_text[split_text.len() - 1]));
         }
@@ -82,10 +83,6 @@ impl BranchManager {
         match fs::create_dir(format!("./.gup/commit/{branch_name}")) {
             Ok(()) => (),
             Err(_) => return println!("failed to initiate branch")
-        }
-        match fs::create_dir(format!("./.gup/commit/{branch_name}/v1")) {
-            Ok(()) => (),
-            Err(_) => return println!("failed to initiate branch versioning")
         }
     }
 

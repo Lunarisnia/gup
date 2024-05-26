@@ -13,7 +13,7 @@ pub struct FileStager {
 impl FileStager {
     pub fn new(branch_manager: BranchManager) -> FileStager {
         FileStager {
-            stage_list_manager: StageListManager::new(),
+            stage_list_manager: StageListManager::new(branch_manager.clone()),
             branch_manager,
         }
     }
