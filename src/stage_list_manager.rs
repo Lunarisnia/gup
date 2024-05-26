@@ -1,7 +1,6 @@
 use std::{fs, io};
 use std::collections::VecDeque;
-use std::ffi::{OsStr, OsString};
-use std::fs::{DirEntry, File, metadata, OpenOptions, ReadDir};
+use std::fs::{File, metadata, OpenOptions, ReadDir};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
@@ -42,10 +41,31 @@ impl StageListManager {
         stage_list_manager
     }
 
+    fn update_stage_list_raw(&self) {
+        let mut new_stage_list_raw: String = String::new();
+        for i in 0..self.stage_list.len() {
+            match self.stage_list.get(i) {
+                Some(staged) => {
+                    let StageList {
+                        file_path,
+                        status,
+                        timestamp
+                    } = staged;
+                    new_stage_list_raw.push_str(format!("{}-|-{}-|-{}\n", file_path, status, timestamp).as_str());
+                }
+                None => (),
+            }
+            println!("YOU COULD:{:?}", self.stage_list.get(i))
+        }
+
+        println!("Started Writing");
+        println!("WHAT: {:?}", new_stage_list_raw);
+        fs::write("./.gup/stage_list.txt", new_stage_list_raw).unwrap();
+    }
+
     fn update_stage_list(&mut self) {
         self.stage_list = VecDeque::new();
-        let mut content = String::new();
-        self.stage_list_raw.read_to_string(&mut content).unwrap();
+        let content = fs::read_to_string("./.gup/stage_list.txt").unwrap();
         for line in content.split("\n").collect::<Vec<_>>() {
             if line != "" {
                 let split_line = line.split("-|-").collect::<Vec<_>>();
@@ -91,57 +111,60 @@ impl StageListManager {
                 }
             }
         }
+        // Bad design, this should push to the stage_list Vector then update will actually put it on the file
         writeln!(stage_list_raw, "{path_bytes}-|-{}-|-{}\n", status, timestamp_epoch.as_secs()).unwrap();
 
         self.update_stage_list();
         Ok(())
     }
 
-    #[allow(dead_code)]
-    pub fn consume(&mut self) {
-        // TODO: Lets work on this
-        // TODO: Should dequeue the stage_list and add them to commit/branch/v(X)
+    pub fn _consume(&mut self, commit_version: u64) {
         match self.stage_list.pop_front() {
             None => {
-                println!("Queue is empty");
+                self.update_stage_list_raw();
                 return;
             }
             Some(staged) => {
-                // All of this will be copied to the same commit folder function
-                // It will error if the directory doesn't exist, file does not matter
-                // Create Commit dir and copy file into it
-                // TODO: Copy file, make sure it can create if the destination don't exist
-                let dirs: ReadDir = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap();
-                let mut version_stack: u64 = 0;
-                for _ in dirs {
-                    version_stack += 1;
-                }
+                let target =
+                    format!("./.gup/commit/{}/{}/{}",
+                            self.branch_manager.active_branch,
+                            commit_version,
+                            staged.file_path.trim_start_matches("./"));
 
-                if version_stack > 0 {
-                    println!("VSTACK: {:?}", version_stack);
-                    println!("latestINDEX: {version_stack}");
-                    self.create_commit_dir(version_stack);
-
-                    println!("YOOOO: {:?}", staged);
-                    let target =
-                        format!("./.gup/commit/{}/v{}/{}",
-                                self.branch_manager.active_branch,
-                                version_stack,
-                                staged.file_path.trim_start_matches("./"));
-                    println!("TARGET: {target}");
-
+                if !Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, commit_version).as_str()).exists() {
+                    match self.create_commit_dir(commit_version) {
+                        Ok(_) => {
+                            fs::copy(staged.file_path, target).unwrap();
+                        }
+                        Err(_) => println!("error")
+                    };
                 } else {
-                    // Means there is no commit yet
-                    self.create_commit_dir(0);
+                    fs::copy(staged.file_path, target).unwrap();
                 }
             }
         }
+        self._consume(commit_version);
     }
 
-    fn create_commit_dir(&self, index: u64) {
+    #[allow(dead_code)]
+    pub fn consume(&mut self) {
+        // TODO: What if stage list is empty
+        // TODO: have to update the head every commit
+        // All of this will be copied to the same commit folder function
+        // It will error if the directory doesn't exist, file does not matter
+        // Create Commit dir and copy file into it
+        let dirs: ReadDir = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap();
+        let mut version_stack: u64 = 0;
+        for _ in dirs {
+            version_stack += 1;
+        }
+        self._consume(version_stack);
+    }
+
+    fn create_commit_dir(&self, index: u64) -> Result<(), String> {
         match fs::create_dir(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, index)) {
-            Ok(()) => (),
-            Err(e) => return println!("failed to create commit dir: {}", e)
+            Ok(()) => Ok(()),
+            Err(e) => Err(format!("failed to create commit dir: {}", e))
         }
     }
 
