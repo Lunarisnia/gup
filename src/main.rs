@@ -59,7 +59,7 @@ fn main() {
         Some(Commands::checkout { branch }) => branch_manager.checkout(branch),
         Some(Commands::commit { message }) => {
             let mut stage_list_manager: StageListManager = StageListManager::new(branch_manager.clone());
-            stage_list_manager.consume();
+            stage_list_manager.consume(message);
         }
         None => (),
     }

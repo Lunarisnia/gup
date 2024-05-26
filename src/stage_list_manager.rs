@@ -139,10 +139,8 @@ impl StageListManager {
         self._consume(commit_version);
     }
 
-    pub fn consume(&mut self) {
-        // TODO: What if stage list is empty
+    pub fn consume(&mut self, commit_message: &String) {
         // TODO: have to update the head every commit
-        // TODO: how do I save the commit message
         // All of this will be copied to the same commit folder function
         // It will error if the directory doesn't exist, file does not matter
         // Create Commit dir and copy file into it
@@ -156,6 +154,7 @@ impl StageListManager {
             return;
         }
         self._consume(version_stack);
+        fs::write(format!("./.gup/commit/{}/{}/.message.txt", self.branch_manager.active_branch, version_stack), commit_message).unwrap();
     }
 
     fn create_commit_dir(&self, index: u64) -> Result<(), String> {
