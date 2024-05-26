@@ -35,7 +35,6 @@ impl FileStager {
             files_to_compare.push(entry_path);
         }
 
-        println!("Hei: {:?}", files_to_compare); // TODO: Remove
         let path = path_buf.to_str().unwrap();
         let mut ignore_list: Vec<PathBuf> = Vec::new();
         Self::preprocess(&mut ignore_list);

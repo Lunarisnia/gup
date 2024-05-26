@@ -29,7 +29,6 @@ impl MazeSolver {
         let read_dir = fs::read_dir(diving_spot).unwrap();
         for entry in read_dir {
             let dir_path: PathBuf = entry.unwrap().path();
-            println!("{:?}", dir_path);
             let found = self.dive(&dir_path);
             if found {
                 return true;

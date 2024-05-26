@@ -55,11 +55,8 @@ impl StageListManager {
                 }
                 None => (),
             }
-            println!("YOU COULD:{:?}", self.stage_list.get(i))
         }
 
-        println!("Started Writing");
-        println!("WHAT: {:?}", new_stage_list_raw);
         fs::write("./.gup/stage_list.txt", new_stage_list_raw).unwrap();
     }
 
@@ -132,24 +129,20 @@ impl StageListManager {
                             staged.file_path.trim_start_matches("./"));
 
                 if !Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, commit_version).as_str()).exists() {
-                    match self.create_commit_dir(commit_version) {
-                        Ok(_) => {
-                            fs::copy(staged.file_path, target).unwrap();
-                        }
-                        Err(_) => println!("error")
-                    };
-                } else {
-                    fs::copy(staged.file_path, target).unwrap();
+                    self.create_commit_dir(commit_version).unwrap();
                 }
+                let parent = Path::new(&target).parent().unwrap();
+                fs::create_dir_all(parent).unwrap();
+                fs::copy(staged.file_path, target).unwrap();
             }
         }
         self._consume(commit_version);
     }
 
-    #[allow(dead_code)]
     pub fn consume(&mut self) {
         // TODO: What if stage list is empty
         // TODO: have to update the head every commit
+        // TODO: how do I save the commit message
         // All of this will be copied to the same commit folder function
         // It will error if the directory doesn't exist, file does not matter
         // Create Commit dir and copy file into it
@@ -157,6 +150,10 @@ impl StageListManager {
         let mut version_stack: u64 = 0;
         for _ in dirs {
             version_stack += 1;
+        }
+        if self.stage_list.len() < 1 {
+            println!("You haven't commited anything yet bro");
+            return;
         }
         self._consume(version_stack);
     }
