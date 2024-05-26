@@ -36,6 +36,7 @@ impl BranchManager {
         }
     }
 
+    // TODO: Might need to move this to head_manager to avoid circular dependency
     pub fn checkout(&self, branch: &String) {
         let read_dir = fs::read_dir("./.gup/checkout").unwrap();
         for entry in read_dir {

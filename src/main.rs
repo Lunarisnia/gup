@@ -11,6 +11,7 @@ mod file_stager;
 mod maze_solver;
 mod branch_manager;
 mod stage_list_manager;
+mod head_manager;
 
 #[derive(Parser)]
 struct CLI {
@@ -52,6 +53,7 @@ fn main() {
             let mut file_stager = FileStager::new(branch_manager);
             file_stager.stage(path).unwrap()
         }
+        // TODO: Remove this command later
         Some(Commands::copy { from, to }) => {
             println!("Copy from: {:?} to {:?}", from, to);
             fs::copy(from, to).unwrap();
