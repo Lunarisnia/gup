@@ -36,20 +36,6 @@ impl BranchManager {
         }
     }
 
-    // TODO: Might need to move this to head_manager to avoid circular dependency
-    pub fn checkout(&self, branch: &String) {
-        let read_dir = fs::read_dir("./.gup/checkout").unwrap();
-        for entry in read_dir {
-            let dir_entry = entry.unwrap();
-            let dir_path = dir_entry.path();
-            let split_text = &dir_path.to_str().unwrap().split("/").collect::<Vec<_>>();
-
-            if split_text[split_text.len() - 1] == branch {
-                fs::write("./.gup/active_branch.txt", split_text[split_text.len() - 1]).unwrap();
-            }
-        }
-    }
-
     #[allow(dead_code)]
     pub fn fetch_head(&self) -> PathBuf {
         let read_dir = fs::read_dir(format!("./.gup/checkout/{}", self.active_branch)).unwrap();

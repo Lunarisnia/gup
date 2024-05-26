@@ -1,10 +1,12 @@
 // use std::io::{BufRead};
 
 use std::fs;
+
 use clap::{Parser, Subcommand};
 
 use crate::branch_manager::BranchManager;
 use crate::file_stager::FileStager;
+use crate::head_manager::HeadManager;
 use crate::stage_list_manager::StageListManager;
 
 mod file_stager;
@@ -37,6 +39,8 @@ enum Commands {
         message: String,
     },
 
+    construct {},
+
     copy {
         from: std::path::PathBuf,
         to: std::path::PathBuf,
@@ -58,7 +62,14 @@ fn main() {
             println!("Copy from: {:?} to {:?}", from, to);
             fs::copy(from, to).unwrap();
         }
-        Some(Commands::checkout { branch }) => branch_manager.checkout(branch),
+        Some(Commands::construct {}) => {
+            let head_manager = HeadManager::new(&branch_manager);
+            head_manager.construct_head();
+        }
+        Some(Commands::checkout { branch }) => {
+            let head_manager = HeadManager::new(&branch_manager);
+            head_manager.checkout(branch);
+        }
         Some(Commands::commit { message }) => {
             let mut stage_list_manager: StageListManager = StageListManager::new(branch_manager.clone());
             stage_list_manager.consume(message);
