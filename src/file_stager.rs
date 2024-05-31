@@ -3,6 +3,7 @@ use std::fs::{DirEntry, metadata};
 use std::path::{Path, PathBuf};
 
 use crate::branch_manager::BranchManager;
+use crate::head_manager::HeadManager;
 use crate::stage_list_manager::StageListManager;
 
 pub struct FileStager {
@@ -11,16 +12,15 @@ pub struct FileStager {
 }
 
 impl FileStager {
-    pub fn new(branch_manager: BranchManager) -> FileStager {
+    pub fn new(branch_manager: &BranchManager, head_manager: &HeadManager) -> FileStager {
         FileStager {
-            stage_list_manager: StageListManager::new(branch_manager.clone()),
-            branch_manager,
+            stage_list_manager: StageListManager::new(branch_manager, head_manager),
+            branch_manager: branch_manager.clone(),
         }
     }
 
 
     fn scan_for_files_to_compare(&self, path: &Path, files_to_compare: &mut Vec<PathBuf>) {
-        println!("this ran");
         let entries = path.read_dir().unwrap();
         for entry in entries {
             let dir_entry: DirEntry = entry.unwrap();

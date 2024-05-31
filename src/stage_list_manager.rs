@@ -8,8 +8,8 @@ use std::time::SystemTime;
 use clap::Error;
 
 use crate::branch_manager::BranchManager;
+use crate::head_manager::HeadManager;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct StageList {
     file_path: String,
@@ -21,10 +21,11 @@ pub struct StageListManager {
     stage_list_raw: File,
     stage_list: VecDeque<StageList>,
     branch_manager: BranchManager,
+    head_manager: HeadManager,
 }
 
 impl StageListManager {
-    pub fn new(branch_manager: BranchManager) -> StageListManager {
+    pub fn new(branch_manager: &BranchManager, head_manager: &HeadManager) -> StageListManager {
         let mut stage_list_manager = StageListManager {
             stage_list: VecDeque::new(),
             stage_list_raw: OpenOptions::new()
@@ -33,7 +34,8 @@ impl StageListManager {
                 .read(true)
                 .create(true)
                 .open("./.gup/stage_list.txt").unwrap(),
-            branch_manager,
+            branch_manager: branch_manager.clone(),
+            head_manager: head_manager.clone(),
         };
 
         stage_list_manager.update_stage_list();
@@ -84,14 +86,15 @@ impl StageListManager {
         let timestamp_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
         let mut status = "CREATED";
 
-        println!("HERE: {:?}", files_to_compare);
+        // TODO: Remove println!
+        // println!("HERE: {:?}", files_to_compare);
         // Compare all the item from the head that needs comparing
         for compare_file in files_to_compare {
             if file.file_name().unwrap() == compare_file.file_name().unwrap() {
                 let is_identical = self.compare_files(&file.to_path_buf(), compare_file).unwrap();
-                println!("Check for identical");
+                // println!("Check for identical");
                 if is_identical {
-                    println!("IDENTICAL");
+                    // println!("IDENTICAL");
                     return Ok(());
                 } else {
                     status = "UPDATED";
@@ -140,7 +143,6 @@ impl StageListManager {
     }
 
     pub fn consume(&mut self, commit_message: &String) {
-        // TODO: have to update the head every commit
         // All of this will be copied to the same commit folder function
         // It will error if the directory doesn't exist, file does not matter
         // Create Commit dir and copy file into it
@@ -154,6 +156,7 @@ impl StageListManager {
             return;
         }
         self._consume(version_stack);
+        self.head_manager.construct_head();
         fs::write(format!("./.gup/commit/{}/{}/.message.txt", self.branch_manager.active_branch, version_stack), commit_message).unwrap();
     }
 
@@ -173,7 +176,6 @@ impl StageListManager {
 
         // validate file size
         if meta_a.len() != meta_b.len() {
-            println!("{:?} != {:?}", file_a, file_b);
             return Ok(false);
         }
 
@@ -208,10 +210,8 @@ impl StageListManager {
         }
 
         if identical {
-            println!("File is identical");
             Ok(true)
         } else {
-            println!("Nah Bro");
             Ok(false)
         }
     }

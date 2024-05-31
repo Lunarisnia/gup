@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use crate::branch_manager::BranchManager;
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub struct HeadManager {
     branch_manager: BranchManager,
 }

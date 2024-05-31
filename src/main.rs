@@ -50,11 +50,12 @@ enum Commands {
 fn main() {
     let cli: CLI = CLI::parse();
     let branch_manager: BranchManager = BranchManager::new();
+    let head_manager = HeadManager::new(&branch_manager);
 
     match &cli.command {
         Some(Commands::init {}) => branch_manager.init_repository("main".to_string()),
         Some(Commands::add { path }) => {
-            let mut file_stager = FileStager::new(branch_manager);
+            let mut file_stager = FileStager::new(&branch_manager, &head_manager);
             file_stager.stage(path).unwrap()
         }
         // TODO: Remove this command later
@@ -66,12 +67,13 @@ fn main() {
             let head_manager = HeadManager::new(&branch_manager);
             head_manager.construct_head();
         }
+
         Some(Commands::checkout { branch }) => {
             let head_manager = HeadManager::new(&branch_manager);
             head_manager.checkout(branch);
         }
         Some(Commands::commit { message }) => {
-            let mut stage_list_manager: StageListManager = StageListManager::new(branch_manager.clone());
+            let mut stage_list_manager: StageListManager = StageListManager::new(&branch_manager, &head_manager);
             stage_list_manager.consume(message);
         }
         None => (),
