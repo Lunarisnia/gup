@@ -19,7 +19,6 @@ impl HeadManager {
     fn _construct_head(&self, path: &Path, parent: &str) {
         let entries = path.read_dir().unwrap().map(|r| r.unwrap()).collect::<Vec<_>>();
         for entry in entries {
-            // println!("Copying: {:?}", entry);
             let path: PathBuf = entry.path();
             if path.is_file() && path.file_name().unwrap() == ".message.txt" {
                 // ignore message file
@@ -41,11 +40,10 @@ impl HeadManager {
 
     pub fn construct_head(&self) {
         // Try sorting first then process the thing
-        let mut paths: Vec<_> = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap()
-            .map(|r| r.unwrap()).collect();
-        paths.sort_by_key(|dir| dir.path());
-        for entry in paths {
-            let path: PathBuf = entry.path();
+        let paths: Vec<_> = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap()
+            .collect();
+        for i in 0..paths.len() {
+            let path: PathBuf = Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, i).as_str()).to_path_buf();
             self._construct_head(&path, path.to_str().unwrap());
         }
     }

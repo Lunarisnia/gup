@@ -35,12 +35,13 @@ impl FileStager {
     }
 
     pub fn stage(&mut self, path_buf: &PathBuf) -> Result<(), &str> {
+        // TODO: stage single file support
         if !Path::new("./.gup").exists() {
             println!("This is not a gup repository");
             return Err("This is not a gup repository");
         }
         let mut files_to_compare: Vec<PathBuf> = Vec::new();
-        let mut compared_files: Vec<PathBuf> = Vec::new(); // TODO: Loop over this and files_to_compare and see if there is a diff, the diff is marked as deleted
+        let mut compared_files: Vec<PathBuf> = Vec::new();
         self.scan_for_files_to_compare(Path::new(format!("./.gup/checkout/{}", self.branch_manager.active_branch).as_str()), &mut files_to_compare);
 
         let path = path_buf.to_str().unwrap();
@@ -77,7 +78,7 @@ impl FileStager {
         let mut ignore_list: Vec<PathBuf> = Vec::new();
         ignore_list.push(Path::new("./.gup").to_path_buf());
         for entry in gup_ignore.split("\n").collect::<Vec<_>>() {
-            ignore_list.push(Path::new(entry).to_path_buf());
+            ignore_list.push(Path::new(format!("./{entry}").as_str()).to_path_buf());
         }
 
         *ignore_buf = ignore_list;

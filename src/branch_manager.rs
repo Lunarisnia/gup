@@ -24,6 +24,16 @@ impl BranchManager {
         branch_manager
     }
 
+    pub fn create_new_branch(&self, new_branch_name: &String) {
+        // 1. Create commit and head folder for this new branch
+        // 2. Copy the entire commit folder of current branches to the new branches
+        // 3. Build the head
+
+        self.init_branch(&new_branch_name);
+        // Create the default branch head
+        self.init_checkout(&new_branch_name);
+        println!("TODO: Create new branch based on current_branch");
+    }
 
     fn fetch_branch_list(&mut self) {
         let read_dir: ReadDir= fs::read_dir("./.gup/checkout").unwrap();
@@ -34,16 +44,6 @@ impl BranchManager {
 
             self.branch_list.push(format!("{}", split_text[split_text.len() - 1]));
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn fetch_head(&self) -> PathBuf {
-        let read_dir = fs::read_dir(format!("./.gup/checkout/{}", self.active_branch)).unwrap();
-        for entry in read_dir {
-            let dir_entry = entry.unwrap();
-            return dir_entry.path();
-        }
-        PathBuf::new()
     }
 
     pub fn init_repository(&self, starting_branch: String) {
