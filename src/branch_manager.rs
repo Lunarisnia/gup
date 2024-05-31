@@ -24,15 +24,51 @@ impl BranchManager {
         branch_manager
     }
 
-    pub fn create_new_branch(&self, new_branch_name: &String) {
-        // 1. Create commit and head folder for this new branch
-        // 2. Copy the entire commit folder of current branches to the new branches
-        // 3. Build the head
+    fn copy_commit(&self, source_commit: &Path, target_commit: &Path, source_parent: &Path) {
+        let entries = source_commit.read_dir().unwrap().map(|r| r.unwrap()).collect::<Vec<_>>();
+        for entry in entries {
+            let path: PathBuf = entry.path();
+            if path.is_dir() {
+                self.copy_commit(&path, &target_commit, &source_commit);
+                return;
+            }
+            let target_parent = format!("{}{}", target_commit.to_str().unwrap(), path.parent().unwrap()
+                .to_str().unwrap().trim_start_matches(source_parent.to_str().unwrap()));
 
+            fs::create_dir_all(&target_parent).unwrap();
+            let target = format!("{}{}", &target_parent.as_str(),
+                                 path.to_str().unwrap().trim_start_matches(&path.parent().unwrap().to_str().unwrap()));
+            fs::copy(path, target).unwrap();
+        }
+    }
+
+    pub fn create_new_branch(&self, new_branch_name: &String) {
+        // 0. Check if the branch already existed, if yes then tell the user
+        let target_head: bool = Path::new(format!("./.gup/checkout/{}", &new_branch_name).as_str()).exists();
+        if target_head {
+            println!("Branch already existed man");
+            return;
+        }
+
+        // 1. Create commit and head folder for this new branch
         self.init_branch(&new_branch_name);
-        // Create the default branch head
         self.init_checkout(&new_branch_name);
-        println!("TODO: Create new branch based on current_branch");
+
+        // 2. Copy the entire commit folder of current branches to the new branches
+        let source_commit: PathBuf = Path::new(format!("./.gup/commit/{}", self.active_branch).as_str()).to_path_buf();
+        let source_commits: Vec<_> = source_commit.read_dir().unwrap().map(|r| r.unwrap()).collect();
+
+        for commits in source_commits {
+            let commit: PathBuf = commits.path();
+            let dir_name = commit.file_name().unwrap();
+
+            let target_commit = Path::new(format!("./.gup/commit/{}/{}", &new_branch_name, dir_name.to_str().unwrap()).as_str()).to_path_buf();
+            fs::create_dir(&target_commit).unwrap();
+            self.copy_commit(&commit, &target_commit, &commit);
+        }
+
+        // Head will be built when the user checks out to the actual branch
+        println!("Branch {} has been created.", new_branch_name);
     }
 
     fn fetch_branch_list(&mut self) {
@@ -63,6 +99,7 @@ impl BranchManager {
         }
         // Create the default branch head
         self.init_checkout(&starting_branch);
+        self.checkout_to(&starting_branch);
         println!("Gup repository initialized!");
     }
 
@@ -78,6 +115,12 @@ impl BranchManager {
             Ok(()) => (),
             Err(_) => return println!("failed to init checkout head")
         }
+    }
+
+    pub fn checkout_to(&self, branch_name: &String) {
+        // TODO: Check if branch exist
+        // TODO: Build the head
+        // TODO: Take the head and build the workdir
         let mut active_branch = File::create("./.gup/active_branch.txt").unwrap();
         write!(active_branch, "{}", branch_name).unwrap();
     }
