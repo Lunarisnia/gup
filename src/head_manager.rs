@@ -1,5 +1,4 @@
 use std::fs;
-use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 
 use crate::branch_manager::BranchManager;
@@ -18,14 +17,14 @@ impl HeadManager {
     }
 
     fn _construct_head(&self, path: &Path, parent: &str) {
-        let entries = path.read_dir().unwrap();
+        let entries = path.read_dir().unwrap().map(|r| r.unwrap()).collect::<Vec<_>>();
         for entry in entries {
-            let dir_entry: DirEntry = entry.unwrap();
-            let path: PathBuf = dir_entry.path();
+            // println!("Copying: {:?}", entry);
+            let path: PathBuf = entry.path();
             if path.is_file() && path.file_name().unwrap() == ".message.txt" {
                 // ignore message file
                 // IMPROVEMENT: might want to combine them all into one file later for gup log
-                return;
+                continue;
             }
             if path.is_dir() {
                 self._construct_head(&path, parent);
@@ -33,6 +32,7 @@ impl HeadManager {
             }
             let target = format!("./.gup/checkout/{}{}", self.branch_manager.active_branch, path.to_str().unwrap().trim_start_matches(parent));
             let target_path = Path::new(target.as_str());
+
             let target_parent = target_path.parent().unwrap();
             fs::create_dir_all(target_parent).unwrap();
             fs::copy(path, target_path).unwrap();
@@ -40,11 +40,12 @@ impl HeadManager {
     }
 
     pub fn construct_head(&self) {
-        let dirs = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap();
-        for entry in dirs {
-            let dir_entry: DirEntry = entry.unwrap();
-            let path: PathBuf = dir_entry.path();
-            // println!("Commit: {:?}", &path);
+        // Try sorting first then process the thing
+        let mut paths: Vec<_> = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap()
+            .map(|r| r.unwrap()).collect();
+        paths.sort_by_key(|dir| dir.path());
+        for entry in paths {
+            let path: PathBuf = entry.path();
             self._construct_head(&path, path.to_str().unwrap());
         }
     }

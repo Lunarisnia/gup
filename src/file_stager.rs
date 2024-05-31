@@ -1,9 +1,9 @@
-use std::{fs};
-use std::fs::{metadata, ReadDir};
+use std::fs;
+use std::fs::{DirEntry, metadata};
 use std::path::{Path, PathBuf};
 
 use crate::branch_manager::BranchManager;
-use crate::stage_list_manager::{StageListManager};
+use crate::stage_list_manager::StageListManager;
 
 pub struct FileStager {
     stage_list_manager: StageListManager,
@@ -18,8 +18,20 @@ impl FileStager {
         }
     }
 
-    fn fetch_head(&self, branch: &String) -> ReadDir {
-        fs::read_dir(format!("./.gup/checkout/{branch}")).unwrap()
+
+    fn scan_for_files_to_compare(&self, path: &Path, files_to_compare: &mut Vec<PathBuf>) {
+        println!("this ran");
+        let entries = path.read_dir().unwrap();
+        for entry in entries {
+            let dir_entry: DirEntry = entry.unwrap();
+            let path_buf: PathBuf = dir_entry.path();
+            if path_buf.is_dir() {
+                self.scan_for_files_to_compare(&path_buf, files_to_compare);
+                return;
+            }
+
+            files_to_compare.push(path_buf);
+        }
     }
 
     pub fn stage(&mut self, path_buf: &PathBuf) -> Result<(), &str> {
@@ -29,11 +41,7 @@ impl FileStager {
         }
         let mut files_to_compare: Vec<PathBuf> = Vec::new();
         let mut compared_files: Vec<PathBuf> = Vec::new(); // TODO: Loop over this and files_to_compare and see if there is a diff, the diff is marked as deleted
-        let head = self.fetch_head(&self.branch_manager.active_branch);
-        for entry in head {
-            let entry_path = entry.unwrap().path();
-            files_to_compare.push(entry_path);
-        }
+        self.scan_for_files_to_compare(Path::new(format!("./.gup/checkout/{}", self.branch_manager.active_branch).as_str()), &mut files_to_compare);
 
         let path = path_buf.to_str().unwrap();
         let mut ignore_list: Vec<PathBuf> = Vec::new();
