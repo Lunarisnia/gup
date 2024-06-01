@@ -60,8 +60,6 @@ fn check_valid_gup_repo<F>(f: F) where F: FnOnce() {
 }
 
 fn main() {
-    // TODO: Create new branch
-    // TODO: Checkout the branch and updates the project folder
     let cli: CLI = CLI::parse();
     let branch_manager: BranchManager = BranchManager::new();
     let head_manager = HeadManager::new(&branch_manager);
