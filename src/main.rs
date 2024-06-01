@@ -11,7 +11,6 @@ use crate::head_manager::HeadManager;
 use crate::stage_list_manager::StageListManager;
 
 mod file_stager;
-mod maze_solver;
 mod branch_manager;
 mod stage_list_manager;
 mod head_manager;
