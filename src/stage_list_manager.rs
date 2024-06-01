@@ -127,11 +127,11 @@ impl StageListManager {
             Some(staged) => {
                 let target =
                     format!("./.gup/commit/{}/{}/{}",
-                            self.branch_manager.active_branch,
+                            self.branch_manager.get_active_branch(),
                             commit_version,
                             staged.file_path.trim_start_matches("./"));
 
-                if !Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, commit_version).as_str()).exists() {
+                if !Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.get_active_branch(), commit_version).as_str()).exists() {
                     self.create_commit_dir(commit_version).unwrap();
                 }
                 let parent = Path::new(&target).parent().unwrap();
@@ -146,7 +146,7 @@ impl StageListManager {
         // All of this will be copied to the same commit folder function
         // It will error if the directory doesn't exist, file does not matter
         // Create Commit dir and copy file into it
-        let dirs: ReadDir = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.active_branch)).unwrap();
+        let dirs: ReadDir = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.get_active_branch())).unwrap();
         let mut version_stack: u64 = 0;
         for _ in dirs {
             version_stack += 1;
@@ -157,11 +157,11 @@ impl StageListManager {
         }
         self._consume(version_stack);
         self.head_manager.construct_head();
-        fs::write(format!("./.gup/commit/{}/{}/.message.txt", self.branch_manager.active_branch, version_stack), commit_message).unwrap();
+        fs::write(format!("./.gup/commit/{}/{}/.message.txt", self.branch_manager.get_active_branch(), version_stack), commit_message).unwrap();
     }
 
     fn create_commit_dir(&self, index: u64) -> Result<(), String> {
-        match fs::create_dir(format!("./.gup/commit/{}/{}", self.branch_manager.active_branch, index)) {
+        match fs::create_dir(format!("./.gup/commit/{}/{}", self.branch_manager.get_active_branch(), index)) {
             Ok(()) => Ok(()),
             Err(e) => Err(format!("failed to create commit dir: {}", e))
         }

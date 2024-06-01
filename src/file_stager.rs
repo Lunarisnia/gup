@@ -19,7 +19,6 @@ impl FileStager {
         }
     }
 
-
     fn scan_for_files_to_compare(&self, path: &Path, files_to_compare: &mut Vec<PathBuf>) {
         let entries = path.read_dir().unwrap();
         for entry in entries {
@@ -42,7 +41,7 @@ impl FileStager {
         }
         let mut files_to_compare: Vec<PathBuf> = Vec::new();
         let mut compared_files: Vec<PathBuf> = Vec::new();
-        self.scan_for_files_to_compare(Path::new(format!("./.gup/checkout/{}", self.branch_manager.active_branch).as_str()), &mut files_to_compare);
+        self.scan_for_files_to_compare(Path::new(format!("./.gup/checkout/{}", self.branch_manager.get_active_branch()).as_str()), &mut files_to_compare);
 
         let path = path_buf.to_str().unwrap();
         let mut ignore_list: Vec<PathBuf> = Vec::new();

@@ -18,7 +18,7 @@ impl BranchManager {
         };
         if Path::new("./.gup").exists() {
             branch_manager.fetch_branch_list();
-            branch_manager.fetch_active_branch()
+            branch_manager.update_active_branch()
         }
 
         branch_manager
@@ -55,7 +55,7 @@ impl BranchManager {
         self.init_checkout(&new_branch_name);
 
         // 2. Copy the entire commit folder of current branches to the new branches
-        let source_commit: PathBuf = Path::new(format!("./.gup/commit/{}", self.active_branch).as_str()).to_path_buf();
+        let source_commit: PathBuf = Path::new(format!("./.gup/commit/{}", self.get_active_branch()).as_str()).to_path_buf();
         let source_commits: Vec<_> = source_commit.read_dir().unwrap().map(|r| r.unwrap()).collect();
 
         for commits in source_commits {
@@ -118,15 +118,16 @@ impl BranchManager {
     }
 
     pub fn checkout_to(&self, branch_name: &String) {
-        // TODO: Check if branch exist
-        // TODO: Build the head
-        // TODO: Take the head and build the workdir
         let mut active_branch = File::create("./.gup/active_branch.txt").unwrap();
         write!(active_branch, "{}", branch_name).unwrap();
     }
 
-    fn fetch_active_branch(&mut self) {
+    fn update_active_branch(&mut self) {
         let active_branch = fs::read_to_string("./.gup/active_branch.txt").unwrap();
         self.active_branch = active_branch;
+    }
+
+    pub fn get_active_branch(&self) -> String {
+        fs::read_to_string("./.gup/active_branch.txt").unwrap()
     }
 }
