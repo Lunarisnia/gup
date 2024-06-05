@@ -1,5 +1,5 @@
 use std::fs;
-use std::fs::{DirEntry, metadata};
+use std::fs::{metadata, DirEntry};
 use std::path::{Path, PathBuf};
 
 use crate::branch_manager::BranchManager;
@@ -41,20 +41,40 @@ impl FileStager {
         }
         let mut files_to_compare: Vec<PathBuf> = Vec::new();
         let mut compared_files: Vec<PathBuf> = Vec::new();
-        self.scan_for_files_to_compare(Path::new(format!("./.gup/checkout/{}", self.branch_manager.get_active_branch()).as_str()), &mut files_to_compare);
+        self.scan_for_files_to_compare(
+            Path::new(
+                format!(
+                    "./.gup/checkout/{}",
+                    self.branch_manager.get_active_branch()
+                )
+                .as_str(),
+            ),
+            &mut files_to_compare,
+        );
 
         let path = path_buf.to_str().unwrap();
         let mut ignore_list: Vec<PathBuf> = Vec::new();
         Self::preprocess(&mut ignore_list);
         match path {
-            "." => self._stage(path_buf, &ignore_list, &files_to_compare, &mut compared_files),
+            "." => self._stage(
+                path_buf,
+                &ignore_list,
+                &files_to_compare,
+                &mut compared_files,
+            ),
             _ => {}
         }
 
         Ok(())
     }
 
-    fn _stage(&mut self, path: &Path, ignore_list: &Vec<PathBuf>, files_to_compare: &Vec<PathBuf>, compared_files: &mut Vec<PathBuf>) {
+    fn _stage(
+        &mut self,
+        path: &Path,
+        ignore_list: &Vec<PathBuf>,
+        files_to_compare: &Vec<PathBuf>,
+        compared_files: &mut Vec<PathBuf>,
+    ) {
         let read_dir = fs::read_dir(path).unwrap();
         for entry in read_dir {
             let dir_path = entry.unwrap().path();
@@ -63,7 +83,10 @@ impl FileStager {
             };
             let meta = metadata(&dir_path).unwrap();
             if meta.is_file() {
-                let _ = &self.stage_list_manager.push(&dir_path, files_to_compare, compared_files).unwrap();
+                let _ = &self
+                    .stage_list_manager
+                    .push(&dir_path, files_to_compare, compared_files)
+                    .unwrap();
                 continue;
             }
             if meta.is_dir() {

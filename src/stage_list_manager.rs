@@ -1,9 +1,9 @@
-use std::{fs, io};
 use std::collections::VecDeque;
-use std::fs::{File, metadata, OpenOptions, ReadDir};
+use std::fs::{metadata, File, OpenOptions, ReadDir};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use std::{fs, io};
 
 use clap::Error;
 
@@ -33,7 +33,8 @@ impl StageListManager {
                 .write(true)
                 .read(true)
                 .create(true)
-                .open("./.gup/stage_list.txt").unwrap(),
+                .open("./.gup/stage_list.txt")
+                .unwrap(),
             branch_manager: branch_manager.clone(),
             head_manager: head_manager.clone(),
         };
@@ -51,9 +52,10 @@ impl StageListManager {
                     let StageList {
                         file_path,
                         status,
-                        timestamp
+                        timestamp,
                     } = staged;
-                    new_stage_list_raw.push_str(format!("{}-|-{}-|-{}\n", file_path, status, timestamp).as_str());
+                    new_stage_list_raw
+                        .push_str(format!("{}-|-{}-|-{}\n", file_path, status, timestamp).as_str());
                 }
                 None => (),
             }
@@ -68,22 +70,26 @@ impl StageListManager {
         for line in content.split("\n").collect::<Vec<_>>() {
             if line != "" {
                 let split_line = line.split("-|-").collect::<Vec<_>>();
-                self.stage_list.push_back(
-                    StageList {
-                        file_path: split_line[0].to_string(),
-                        status: split_line[1].to_string(),
-                        timestamp: split_line[2].parse::<u64>().unwrap(),
-                    }
-                );
+                self.stage_list.push_back(StageList {
+                    file_path: split_line[0].to_string(),
+                    status: split_line[1].to_string(),
+                    timestamp: split_line[2].parse::<u64>().unwrap(),
+                });
             }
         }
     }
 
-
-    pub fn push(&mut self, file: &Path, files_to_compare: &Vec<PathBuf>, compared_files: &mut Vec<PathBuf>) -> io::Result<()> {
+    pub fn push(
+        &mut self,
+        file: &Path,
+        files_to_compare: &Vec<PathBuf>,
+        compared_files: &mut Vec<PathBuf>,
+    ) -> io::Result<()> {
         let mut stage_list_raw = &self.stage_list_raw;
         let path_bytes = file.to_str().unwrap();
-        let timestamp_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+        let timestamp_epoch = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap();
         let mut status = "CREATED";
 
         // TODO: Remove println!
@@ -91,7 +97,9 @@ impl StageListManager {
         // Compare all the item from the head that needs comparing
         for compare_file in files_to_compare {
             if file.file_name().unwrap() == compare_file.file_name().unwrap() {
-                let is_identical = self.compare_files(&file.to_path_buf(), compare_file).unwrap();
+                let is_identical = self
+                    .compare_files(&file.to_path_buf(), compare_file)
+                    .unwrap();
                 // println!("Check for identical");
                 if is_identical {
                     // println!("IDENTICAL");
@@ -112,7 +120,13 @@ impl StageListManager {
             }
         }
         // Bad design, this should push to the stage_list Vector then update will actually put it on the file
-        writeln!(stage_list_raw, "{path_bytes}-|-{}-|-{}\n", status, timestamp_epoch.as_secs()).unwrap();
+        writeln!(
+            stage_list_raw,
+            "{path_bytes}-|-{}-|-{}\n",
+            status,
+            timestamp_epoch.as_secs()
+        )
+        .unwrap();
 
         self.update_stage_list();
         Ok(())
@@ -125,13 +139,23 @@ impl StageListManager {
                 return;
             }
             Some(staged) => {
-                let target =
-                    format!("./.gup/commit/{}/{}/{}",
-                            self.branch_manager.get_active_branch(),
-                            commit_version,
-                            staged.file_path.trim_start_matches("./"));
+                let target = format!(
+                    "./.gup/commit/{}/{}/{}",
+                    self.branch_manager.get_active_branch(),
+                    commit_version,
+                    staged.file_path.trim_start_matches("./")
+                );
 
-                if !Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.get_active_branch(), commit_version).as_str()).exists() {
+                if !Path::new(
+                    format!(
+                        "./.gup/commit/{}/{}",
+                        self.branch_manager.get_active_branch(),
+                        commit_version
+                    )
+                    .as_str(),
+                )
+                .exists()
+                {
                     self.create_commit_dir(commit_version).unwrap();
                 }
                 let parent = Path::new(&target).parent().unwrap();
@@ -146,7 +170,11 @@ impl StageListManager {
         // All of this will be copied to the same commit folder function
         // It will error if the directory doesn't exist, file does not matter
         // Create Commit dir and copy file into it
-        let dirs: ReadDir = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.get_active_branch())).unwrap();
+        let dirs: ReadDir = fs::read_dir(format!(
+            "./.gup/commit/{}",
+            self.branch_manager.get_active_branch()
+        ))
+        .unwrap();
         let mut version_stack: u64 = 0;
         for _ in dirs {
             version_stack += 1;
@@ -157,13 +185,25 @@ impl StageListManager {
         }
         self._consume(version_stack);
         self.head_manager.construct_head();
-        fs::write(format!("./.gup/commit/{}/{}/.message.txt", self.branch_manager.get_active_branch(), version_stack), commit_message).unwrap();
+        fs::write(
+            format!(
+                "./.gup/commit/{}/{}/.message.txt",
+                self.branch_manager.get_active_branch(),
+                version_stack
+            ),
+            commit_message,
+        )
+        .unwrap();
     }
 
     fn create_commit_dir(&self, index: u64) -> Result<(), String> {
-        match fs::create_dir(format!("./.gup/commit/{}/{}", self.branch_manager.get_active_branch(), index)) {
+        match fs::create_dir(format!(
+            "./.gup/commit/{}/{}",
+            self.branch_manager.get_active_branch(),
+            index
+        )) {
             Ok(()) => Ok(()),
-            Err(e) => Err(format!("failed to create commit dir: {}", e))
+            Err(e) => Err(format!("failed to create commit dir: {}", e)),
         }
     }
 
@@ -173,12 +213,10 @@ impl StageListManager {
         let meta_a = metadata(file_a)?;
         let meta_b = metadata(file_b)?;
 
-
         // validate file size
         if meta_a.len() != meta_b.len() {
             return Ok(false);
         }
-
 
         let x = File::open(file_a)?;
         let y = File::open(file_b)?;

@@ -10,10 +10,10 @@ use crate::file_stager::FileStager;
 use crate::head_manager::HeadManager;
 use crate::stage_list_manager::StageListManager;
 
-mod file_stager;
 mod branch_manager;
-mod stage_list_manager;
+mod file_stager;
 mod head_manager;
+mod stage_list_manager;
 
 #[derive(Parser)]
 struct CLI {
@@ -51,7 +51,10 @@ enum Commands {
     },
 }
 
-fn check_valid_gup_repo<F>(f: F) where F: FnOnce() {
+fn check_valid_gup_repo<F>(f: F)
+where
+    F: FnOnce(),
+{
     if !Path::new("./.gup").exists() {
         println!("This is not a gup repository");
         return;
@@ -60,11 +63,13 @@ fn check_valid_gup_repo<F>(f: F) where F: FnOnce() {
 }
 
 fn main() {
+    // TODO: Non Naive break_workdir
+    // TODO: Merge Feature
     let cli: CLI = CLI::parse();
     let branch_manager: BranchManager = BranchManager::new();
-    let head_manager = HeadManager::new(&branch_manager);
+    let head_manager: HeadManager = HeadManager::new(&branch_manager);
     let mut stage_list_manager: StageListManager = StageListManager::new(&branch_manager, &head_manager);
-    let mut file_stager = FileStager::new(&branch_manager, &head_manager);
+    let mut file_stager: FileStager = FileStager::new(&branch_manager, &head_manager);
 
     match &cli.command {
         Some(Commands::init {}) => branch_manager.init_repository("main".to_string()),
@@ -82,4 +87,3 @@ fn main() {
         None => (),
     }
 }
-

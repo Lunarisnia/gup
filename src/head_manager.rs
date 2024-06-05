@@ -18,7 +18,11 @@ impl HeadManager {
     }
 
     fn _construct_head(&self, path: &Path, parent: &str) {
-        let entries = path.read_dir().unwrap().map(|r| r.unwrap()).collect::<Vec<_>>();
+        let entries = path
+            .read_dir()
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect::<Vec<_>>();
         for entry in entries {
             let path: PathBuf = entry.path();
             if path.is_file() && path.file_name().unwrap() == ".message.txt" {
@@ -30,7 +34,11 @@ impl HeadManager {
                 self._construct_head(&path, parent);
                 return;
             }
-            let target = format!("./.gup/checkout/{}{}", self.branch_manager.get_active_branch(), path.to_str().unwrap().trim_start_matches(parent));
+            let target = format!(
+                "./.gup/checkout/{}{}",
+                self.branch_manager.get_active_branch(),
+                path.to_str().unwrap().trim_start_matches(parent)
+            );
             let target_path = Path::new(target.as_str());
 
             let target_parent = target_path.parent().unwrap();
@@ -40,10 +48,22 @@ impl HeadManager {
     }
 
     pub fn construct_head(&self) {
-        let paths: Vec<_> = fs::read_dir(format!("./.gup/commit/{}", self.branch_manager.get_active_branch())).unwrap()
+        let paths: Vec<_> = fs::read_dir(format!(
+            "./.gup/commit/{}",
+            self.branch_manager.get_active_branch()
+        ))
+            .unwrap()
             .collect();
         for i in 0..paths.len() {
-            let path: PathBuf = Path::new(format!("./.gup/commit/{}/{}", self.branch_manager.get_active_branch(), i).as_str()).to_path_buf();
+            let path: PathBuf = Path::new(
+                format!(
+                    "./.gup/commit/{}/{}",
+                    self.branch_manager.get_active_branch(),
+                    i
+                )
+                    .as_str(),
+            )
+                .to_path_buf();
             self._construct_head(&path, path.to_str().unwrap());
         }
     }
@@ -51,11 +71,21 @@ impl HeadManager {
     fn break_workdir(&self) {
         // TODO: probably want to compare the file and if its different dont delete
         // Probably also need to pass through the entire repo to check if everything is identical first before starting to delete
-        let head: Vec<DirEntry> = fs::read_dir(format!("./.gup/checkout/{}", self.branch_manager.get_active_branch()).as_str())
-            .unwrap().map(|r| r.unwrap()).collect();
+        let head: Vec<DirEntry> = fs::read_dir(
+            format!(
+                "./.gup/checkout/{}",
+                self.branch_manager.get_active_branch()
+            )
+                .as_str(),
+        )
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
         for entry in head {
             let path = entry.path();
-            let delete = Path::new(format!("./{}", path.file_name().unwrap().to_str().unwrap()).as_str()).to_path_buf();
+            let delete =
+                Path::new(format!("./{}", path.file_name().unwrap().to_str().unwrap()).as_str())
+                    .to_path_buf();
             if !delete.exists() {
                 return;
             }
@@ -85,9 +115,14 @@ impl HeadManager {
 
     fn construct_workdir(&self) {
         // DFS the head
-        let parent = format!("./.gup/checkout/{}", self.branch_manager.get_active_branch());
+        let parent = format!(
+            "./.gup/checkout/{}",
+            self.branch_manager.get_active_branch()
+        );
         let head: Vec<DirEntry> = fs::read_dir(&parent.as_str())
-            .unwrap().map(|r| r.unwrap()).collect();
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
         for entry in head {
             self._construct_workdir(&entry.path(), parent.as_str());
         }
@@ -109,7 +144,6 @@ impl HeadManager {
                 // Build the head
                 self.construct_head();
                 self.construct_workdir();
-                // TODO: Take the head and build the workdir
                 println!("you are now at {}. Enjoy :)", branch);
                 return;
             }

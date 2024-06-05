@@ -25,26 +25,43 @@ impl BranchManager {
     }
 
     fn copy_commit(&self, source_commit: &Path, target_commit: &Path, source_parent: &Path) {
-        let entries = source_commit.read_dir().unwrap().map(|r| r.unwrap()).collect::<Vec<_>>();
+        let entries = source_commit
+            .read_dir()
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect::<Vec<_>>();
         for entry in entries {
             let path: PathBuf = entry.path();
             if path.is_dir() {
                 self.copy_commit(&path, &target_commit, &source_commit);
                 return;
             }
-            let target_parent = format!("{}{}", target_commit.to_str().unwrap(), path.parent().unwrap()
-                .to_str().unwrap().trim_start_matches(source_parent.to_str().unwrap()));
+            let target_parent = format!(
+                "{}{}",
+                target_commit.to_str().unwrap(),
+                path.parent()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .trim_start_matches(source_parent.to_str().unwrap())
+            );
 
             fs::create_dir_all(&target_parent).unwrap();
-            let target = format!("{}{}", &target_parent.as_str(),
-                                 path.to_str().unwrap().trim_start_matches(&path.parent().unwrap().to_str().unwrap()));
+            let target = format!(
+                "{}{}",
+                &target_parent.as_str(),
+                path.to_str()
+                    .unwrap()
+                    .trim_start_matches(&path.parent().unwrap().to_str().unwrap())
+            );
             fs::copy(path, target).unwrap();
         }
     }
 
     pub fn create_new_branch(&self, new_branch_name: &String) {
         // 0. Check if the branch already existed, if yes then tell the user
-        let target_head: bool = Path::new(format!("./.gup/checkout/{}", &new_branch_name).as_str()).exists();
+        let target_head: bool =
+            Path::new(format!("./.gup/checkout/{}", &new_branch_name).as_str()).exists();
         if target_head {
             println!("Branch already existed man");
             return;
@@ -55,14 +72,27 @@ impl BranchManager {
         self.init_checkout(&new_branch_name);
 
         // 2. Copy the entire commit folder of current branches to the new branches
-        let source_commit: PathBuf = Path::new(format!("./.gup/commit/{}", self.get_active_branch()).as_str()).to_path_buf();
-        let source_commits: Vec<_> = source_commit.read_dir().unwrap().map(|r| r.unwrap()).collect();
+        let source_commit: PathBuf =
+            Path::new(format!("./.gup/commit/{}", self.get_active_branch()).as_str()).to_path_buf();
+        let source_commits: Vec<_> = source_commit
+            .read_dir()
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
 
         for commits in source_commits {
             let commit: PathBuf = commits.path();
             let dir_name = commit.file_name().unwrap();
 
-            let target_commit = Path::new(format!("./.gup/commit/{}/{}", &new_branch_name, dir_name.to_str().unwrap()).as_str()).to_path_buf();
+            let target_commit = Path::new(
+                format!(
+                    "./.gup/commit/{}/{}",
+                    &new_branch_name,
+                    dir_name.to_str().unwrap()
+                )
+                .as_str(),
+            )
+            .to_path_buf();
             fs::create_dir(&target_commit).unwrap();
             self.copy_commit(&commit, &target_commit, &commit);
         }
@@ -72,13 +102,14 @@ impl BranchManager {
     }
 
     fn fetch_branch_list(&mut self) {
-        let read_dir: ReadDir= fs::read_dir("./.gup/checkout").unwrap();
+        let read_dir: ReadDir = fs::read_dir("./.gup/checkout").unwrap();
         for entry in read_dir {
             let dir_entry: DirEntry = entry.unwrap();
             let dir_path: PathBuf = dir_entry.path();
             let split_text: Vec<&str> = dir_path.to_str().unwrap().split("/").collect::<Vec<_>>();
 
-            self.branch_list.push(format!("{}", split_text[split_text.len() - 1]));
+            self.branch_list
+                .push(format!("{}", split_text[split_text.len() - 1]));
         }
     }
 
@@ -89,13 +120,13 @@ impl BranchManager {
         }
         match fs::create_dir("./.gup/commit") {
             Ok(()) => (),
-            Err(e) => return println!("{}", e)
+            Err(e) => return println!("{}", e),
         }
         // create the default branch
         self.init_branch(&starting_branch);
         match fs::create_dir("./.gup/checkout") {
             Ok(()) => (),
-            Err(_) => return println!("hah")
+            Err(_) => return println!("hah"),
         }
         // Create the default branch head
         self.init_checkout(&starting_branch);
@@ -106,14 +137,14 @@ impl BranchManager {
     pub fn init_branch(&self, branch_name: &String) {
         match fs::create_dir(format!("./.gup/commit/{branch_name}")) {
             Ok(()) => (),
-            Err(_) => return println!("failed to initiate branch")
+            Err(_) => return println!("failed to initiate branch"),
         }
     }
 
     pub fn init_checkout(&self, branch_name: &String) {
         match fs::create_dir(format!("./.gup/checkout/{branch_name}")) {
             Ok(()) => (),
-            Err(_) => return println!("failed to init checkout head")
+            Err(_) => return println!("failed to init checkout head"),
         }
     }
 
