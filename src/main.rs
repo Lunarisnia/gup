@@ -68,12 +68,13 @@ fn main() {
     let cli: CLI = CLI::parse();
     let branch_manager: BranchManager = BranchManager::new();
     let head_manager: HeadManager = HeadManager::new(&branch_manager);
-    let mut stage_list_manager: StageListManager = StageListManager::new(&branch_manager, &head_manager);
-    let mut file_stager: FileStager = FileStager::new(&branch_manager, &head_manager);
 
     match &cli.command {
         Some(Commands::init {}) => branch_manager.init_repository("main".to_string()),
-        Some(Commands::add { path }) => check_valid_gup_repo(|| file_stager.stage(path).unwrap()),
+        Some(Commands::add { path }) => check_valid_gup_repo(|| {
+            let mut file_stager: FileStager = FileStager::new(&branch_manager, &head_manager);
+            file_stager.stage(path).unwrap();
+        }),
         Some(Commands::branch { branch_name }) => check_valid_gup_repo(|| branch_manager.create_new_branch(branch_name)),
         // TODO: Remove this command later
         Some(Commands::copy { from, to }) => {
@@ -83,7 +84,10 @@ fn main() {
         Some(Commands::construct {}) => check_valid_gup_repo(|| head_manager.construct_head()),
 
         Some(Commands::checkout { branch }) => check_valid_gup_repo(|| head_manager.checkout(branch)),
-        Some(Commands::commit { message }) => check_valid_gup_repo(|| stage_list_manager.consume(message)),
+        Some(Commands::commit { message }) => check_valid_gup_repo(|| {
+            let mut stage_list_manager: StageListManager = StageListManager::new(&branch_manager, &head_manager);
+            stage_list_manager.consume(message);
+        }),
         None => (),
     }
 }
