@@ -25,6 +25,8 @@ me a lot about designing software, rust and DSA. And yes this is also an excuse 
 <br>
 `gup checkout branch_name` change active branch
 
+Gup also support ignore files by creating a file called `.gupignore`
+
 # Getting Started
 ```
 gup init
